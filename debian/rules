@@ -1,0 +1,29 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+export PYBUILD_NAME=bottle
+
+%:
+	dh $@ --with python3,sphinxdoc --buildsystem=pybuild --test-tox
+
+override_dh_auto_build:
+	dh_auto_build
+	PYTHONPATH=. http_proxy='http://127.0.0.1:9/' sphinx-build -N -E -bhtml docs build/html
+	PYTHONPATH=. http_proxy='http://127.0.0.1:9/' sphinx-build -N -E -bman docs build/man
+	rm -rf ./build/html/.doctrees
+
+override_dh_sphinxdoc:
+ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+	dh_sphinxdoc -ppython-bottle-doc
+endif
+
+override_dh_installchangelogs:
+	dh_installchangelogs docs/changelog.rst
+
+override_dh_auto_test:
+ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
+	# Run only "fast" tests, see #834918 and
+	# https://github.com/bottlepy/bottle/commit/9752ca1bd464371db0217a0681cd67d9a7a8dcda
+	python3 test/testall.py fast
+endif
