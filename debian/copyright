@@ -1,12 +1,13 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: bottle
 
 Files: *
-Copyright: © 2009-2011, Marcel Hellkamp <marc@gsites.de>
+Copyright: © 2009-2023, Marcel Hellkamp <marc@gsites.de>
 License: MIT
 
 Files: debian/*
 Copyright: © 2009-2011, David Paleino <dapal@debian.org>
-             2011-2018, Federico Ceratto <federico@debian.org>
+             2011-2023, Federico Ceratto <federico@debian.org>
 License: MIT
 
 License: MIT

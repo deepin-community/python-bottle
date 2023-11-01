@@ -20,10 +20,3 @@ endif
 
 override_dh_installchangelogs:
 	dh_installchangelogs docs/changelog.rst
-
-override_dh_auto_test:
-ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
-	# Run only "fast" tests, see #834918 and
-	# https://github.com/bottlepy/bottle/commit/9752ca1bd464371db0217a0681cd67d9a7a8dcda
-	python3 test/testall.py fast
-endif

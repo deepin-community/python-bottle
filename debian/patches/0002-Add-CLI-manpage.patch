@@ -8,9 +8,6 @@ Subject: Add CLI manpage
  2 files changed, 52 insertions(+)
  create mode 100755 docs/cli.rst
 
-diff --git a/docs/cli.rst b/docs/cli.rst
-new file mode 100755
-index 0000000..39e2d2c
 --- /dev/null
 +++ b/docs/cli.rst
 @@ -0,0 +1,46 @@
@@ -60,11 +57,9 @@ index 0000000..39e2d2c
 +    # on demand.
 +    python -m bottle 'myapp.controller:make_app()''
 +
-diff --git a/docs/conf.py b/docs/conf.py
-index 4ede58a..ded2274 100644
 --- a/docs/conf.py
 +++ b/docs/conf.py
-@@ -20,3 +20,9 @@ intersphinx_mapping = {'python': ('http://docs.python.org/', None),
+@@ -20,3 +20,9 @@
  
  autodoc_member_order = 'bysource'
  
