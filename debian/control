@@ -8,21 +8,14 @@ Build-Depends-Indep:
  dh-python,
  python3-sphinx,
  python3-setuptools,
-# needed for build-time tests
-## gunicorn,
-#python3-cherrypy,
-## python3-eventlet,
-#python3-flup,
-## python3-gevent,
  python3-jinja2,
  python3-mako,
  python3-paste,
-## python3-simpletal,
  python3-tornado,
-## python3-twisted,
  python3-werkzeug,
+ python3-wheel,
  tox
-Standards-Version: 4.5.1
+Standards-Version: 4.6.2
 Homepage: https://bottlepy.org
 Vcs-Git: https://salsa.debian.org/debian/python-bottle.git
 Vcs-Browser: https://salsa.debian.org/debian/python-bottle

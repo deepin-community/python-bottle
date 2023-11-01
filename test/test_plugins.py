@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
-import tools
-
+from . import tools
 
 class MyPlugin(object):
     def __init__(self):
@@ -195,7 +194,7 @@ class TestPluginAPI(tools.ServerTestBase):
             def __call__(self, func): return func
             def setup(self, app): self.app = app
         plugin = self.app.install(Plugin())
-        self.assertEquals(getattr(plugin, 'app', None), self.app)
+        self.assertEqual(getattr(plugin, 'app', None), self.app)
 
     def test_close(self):
         class Plugin(object):

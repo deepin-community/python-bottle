@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 import unittest
 import time
-from tools import tob
+from .tools import tob
 import sys
 import os
 import signal
 import socket
 from subprocess import Popen, PIPE
-import tools
+from . import tools
 from bottle import _e
 
 try:
-    from urllib.request import urlopen
+    from urllib.request import ProxyHandler, build_opener
 except:
-    from urllib2 import urlopen
+    from urllib2 import ProxyHandler, build_opener
 
 serverscript = os.path.join(os.path.dirname(__file__), 'servertest.py')
 
@@ -77,8 +77,10 @@ class TestServer(unittest.TestCase):
                     raise AssertionError(line.strip().decode('utf8'))
 
     def fetch(self, url):
+        proxy_handler = ProxyHandler(proxies={})
+        url_opener = build_opener(proxy_handler)
         try:
-            return urlopen('http://127.0.0.1:%d/%s' % (self.port, url)).read()
+            return url_opener.open('http://127.0.0.1:%d/%s' % (self.port, url)).read()
         except Exception:
             return repr(_e())
 

@@ -6,11 +6,9 @@ Subject: Remove bottle.py from scripts
  setup.py | 1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/setup.py b/setup.py
-index 8b83522..19392f8 100755
 --- a/setup.py
 +++ b/setup.py
-@@ -17,7 +17,6 @@ setup(name='bottle',
+@@ -17,7 +17,6 @@
        author_email='marc@gsites.de',
        url='http://bottlepy.org/',
        py_modules=['bottle'],
