@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import unittest
 import sys, os
-from bottle import new_module
+import bottle
 
 class TestImportHooks(unittest.TestCase):
 
     def make_module(self, name, **args):
-        mod = sys.modules.setdefault(name, new_module(name))
+        mod = sys.modules.setdefault(name, bottle.new_module(name))
         mod.__file__ = '<virtual %s>' % name
         mod.__dict__.update(**args)
         return mod
@@ -38,6 +38,3 @@ class TestImportHooks(unittest.TestCase):
         '''
         from bottle import ext
         self.assertTrue(os.path.isfile(ext.__file__))
-        
-if __name__ == '__main__': #pragma: no cover
-    unittest.main()

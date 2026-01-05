@@ -1,3 +1,22 @@
+python-bottle (0.13.2-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * No change source-only upload for testing migration. (Closes: #1088241)
+
+ -- Boyuan Yang <byang@debian.org>  Mon, 25 Nov 2024 09:56:28 -0500
+
+python-bottle (0.13.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Federico Ceratto <federico@debian.org>  Sun, 20 Oct 2024 22:29:31 +0200
+
+python-bottle (0.13.1-1) unstable; urgency=medium
+
+  * New upstream release (Closes: #1081474, #1058087)
+
+ -- Federico Ceratto <federico@debian.org>  Sat, 14 Sep 2024 12:02:44 +0200
+
 python-bottle (0.12.25-1) unstable; urgency=medium
 
   * New upstream release

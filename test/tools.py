@@ -1,22 +1,59 @@
 # -*- coding: utf-8 -*-
+from __future__ import with_statement
+import os
+
 import bottle
 import sys
 import unittest
 import wsgiref
 import wsgiref.util
 import wsgiref.validate
+import warnings
 
 import mimetypes
 import uuid
 
 from bottle import tob, tonat, BytesIO, py3k, unicode
 
+
 def warn(msg):
     sys.stderr.write('WARNING: %s\n' % msg.strip())
+
 
 def tobs(data):
     ''' Transforms bytes or unicode into a byte stream. '''
     return BytesIO(tob(data))
+
+
+class chdir(object):
+    def __init__(self, dir):
+        if os.path.isfile(dir):
+            dir = os.path.dirname(dir)
+        self.wd = os.path.abspath(dir)
+        self.old = os.path.abspath('.')
+
+    def __enter__(self):
+        os.chdir(self.wd)
+
+    def __exit__(self, exc_type, exc_val, tb):
+        os.chdir(self.old)
+
+
+class assertWarn(object):
+    def __init__(self, text):
+        self.searchtext = text
+
+    def __call__(self, func):
+        def wrapper(*a, **ka):
+            with warnings.catch_warnings(record=True) as wr:
+                warnings.simplefilter("always")
+                out = func(*a, **ka)
+            messages = [repr(w.message) for w in wr]
+            for msg in messages:
+                if self.searchtext in msg:
+                    return out
+            raise AssertionError("Could not find phrase %r in any warning messaged: %r" % (self.searchtext, messages))
+        return wrapper
 
 def api(introduced, deprecated=None, removed=None):
     current    = tuple(map(int, bottle.__version__.split('-')[0].split('.')))
@@ -32,7 +69,7 @@ def api(introduced, deprecated=None, removed=None):
             return func
         elif current < removed:
             func.__doc__ = '(deprecated) ' + (func.__doc__ or '')
-            return func
+            return assertWarn('DeprecationWarning')(func)
         else:
             return None
     return decorator
@@ -54,7 +91,7 @@ class ServerTestBase(unittest.TestCase):
 
     def urlopen(self, path, method='GET', post='', env=None):
         result = {'code':0, 'status':'error', 'header':{}, 'body':tob('')}
-        def start_response(status, header):
+        def start_response(status, header, exc_info=None):
             result['code'] = int(status.split()[0])
             result['status'] = status.split(None, 1)[-1]
             for name, value in header:
@@ -115,24 +152,24 @@ class ServerTestBase(unittest.TestCase):
             self.fail('The search pattern "%s" is not included in wsgi.error: %s' % (search, err))
 
 def multipart_environ(fields, files):
-    boundary = str(uuid.uuid1())
+    boundary = 'lowerUPPER-1234'
     env = {'REQUEST_METHOD':'POST',
            'CONTENT_TYPE':  'multipart/form-data; boundary='+boundary}
     wsgiref.util.setup_testing_defaults(env)
-    boundary = '--' + boundary
+    boundary = '--' + boundary 
     body = ''
     for name, value in fields:
-        body += boundary + '\n'
-        body += 'Content-Disposition: form-data; name="%s"\n\n' % name
-        body += value + '\n'
+        body += boundary + '\r\n'
+        body += 'Content-Disposition: form-data; name="%s"\r\n\r\n' % name
+        body += value + '\r\n'
     for name, filename, content in files:
         mimetype = str(mimetypes.guess_type(filename)[0]) or 'application/octet-stream'
-        body += boundary + '\n'
-        body += 'Content-Disposition: file; name="%s"; filename="%s"\n' % \
+        body += boundary + '\r\n'
+        body += 'Content-Disposition: file; name="%s"; filename="%s"\r\n' % \
              (name, filename)
-        body += 'Content-Type: %s\n\n' % mimetype
-        body += content + '\n'
-    body += boundary + '--\n'
+        body += 'Content-Type: %s\r\n\r\n' % mimetype
+        body += content + '\r\n'
+    body += boundary + '--\r\n'
     if isinstance(body, unicode):
         body = body.encode('utf8')
     env['CONTENT_LENGTH'] = str(len(body))

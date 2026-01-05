@@ -4,25 +4,11 @@ Description: disable tests
 
 --- a/test/test_environ.py
 +++ b/test/test_environ.py
-@@ -621,6 +621,7 @@
-         self.assertEqual(cookies[0], 'name1=value; expires=Thu, 01 Jan 1970 00:00:42 GMT')
-         self.assertEqual(cookies[1], 'name2=value; expires=Thu, 01 Jan 1970 00:00:43 GMT')
+@@ -685,6 +685,7 @@
+                    if name.title() == 'Set-Cookie'])
+         self.assertEqual('name1=value; samesite=strict', cookies[0].lower())
  
 +    @unittest.skip("broken")
      def test_delete_cookie(self):
          response = BaseResponse()
          response.set_cookie('name', 'value')
-@@ -700,11 +701,11 @@
-         response = BaseResponse()
-         now = datetime.datetime.now()
-         response.expires = now
--        
-+
-         def seconds(a, b):
-             td = max(a,b) - min(a,b)
-             return td.days*360*24 + td.seconds
--        
-+
-         self.assertEqual(0, seconds(response.expires, now))
-         now2 = datetime.datetime.utcfromtimestamp(
-             parse_date(response.headers['Expires']))

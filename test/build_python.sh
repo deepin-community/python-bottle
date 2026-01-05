@@ -25,30 +25,25 @@ fi
 
 pushd $PREFIX || exit 1
   echo "Downloading source ..."
-  wget -N http://hg.python.org/cpython/archive/$VERSION.tar.gz  || exit 1
+  wget -N https://www.python.org/ftp/python/$VERSION/Python-$VERSION.tgz || exit 1
 
   echo "Extracting source ..."
-  tar -xzf $VERSION.tar.gz || exit 1
+  tar -xzf Python-$VERSION.tgz || exit 1
 
-  pushd cpython-$VERSION || exit 1
+  pushd Python-$VERSION || exit 1
     echo "Running ./configure --prefix=$PREFIX ..."
-    SVNVERSION=exported ./configure --prefix=$PREFIX || exit 1
+    ./configure --prefix=$PREFIX || exit 1
 
     echo "Running make && make install ..."
     (make -j8 && make install) || exit 1
-    hash -r
 
-    if [ $VERSION = "2.5" ]; then
-        wget https://pypi.python.org/packages/source/s/simplejson/simplejson-3.6.3.tar.gz
-        tar -xvzf simplejson-3.6.3.tar.gz
-        cd simplejson-3.6.3
-        $PREFIX/bin/python$VERSION setup.py install
-    fi
+    echo "Installing distribute and pip..."
+    hash -r
 
   popd
 
   echo "Cleaning up..."
-  rm -rf $VERSION.tar.gz cpython-$VERSION
+  rm -rf $VERSION.tar.gz distribute_setup.py cpython-$VERSION
 popd
 
 
