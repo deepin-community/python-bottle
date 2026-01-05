@@ -1,5 +1,6 @@
 import unittest
 from bottle import static_file, request, response, parse_date, parse_range_header, Bottle, tob
+import bottle
 import wsgiref.util
 import os
 import tempfile
@@ -8,23 +9,33 @@ import time
 basename = os.path.basename(__file__)
 root = os.path.dirname(__file__)
 
+basename2 = os.path.basename(bottle.__file__)
+root2 = os.path.dirname(bottle.__file__)
+
+
+weekday_full = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+weekday_abbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+month_abbr = [None, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 class TestDateParser(unittest.TestCase):
     def test_rfc1123(self):
         """DateParser: RFC 1123 format"""
         ts = time.time()
-        rs = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(ts))
+        rs = bottle.http_date(ts)
         self.assertEqual(int(ts), int(parse_date(rs)))
 
     def test_rfc850(self):
         """DateParser: RFC 850 format"""
         ts = time.time()
-        rs = time.strftime("%A, %d-%b-%y %H:%M:%S GMT", time.gmtime(ts))
+        t = time.gmtime(ts)
+        rs = time.strftime("%%s, %d-%%s-%y %H:%M:%S GMT", t) % (weekday_full[t.tm_wday], month_abbr[t.tm_mon])
         self.assertEqual(int(ts), int(parse_date(rs)))
 
     def test_asctime(self):
         """DateParser: asctime format"""
         ts = time.time()
-        rs = time.strftime("%a %b %d %H:%M:%S %Y", time.gmtime(ts))
+        t = time.gmtime(ts)
+        rs = time.strftime("%%s %%s %d %H:%M:%S %Y", t) % (weekday_abbr[t.tm_wday], month_abbr[t.tm_mon])
         self.assertEqual(int(ts), int(parse_date(rs)))
 
     def test_bad(self):
@@ -50,6 +61,11 @@ class TestSendFile(unittest.TestCase):
         self.assertEqual(404, static_file('not/a/file', root=root).status_code)
         f = static_file(os.path.join('./../', basename), root='./views/')
         self.assertEqual(403, f.status_code)
+
+    def test_file_not_readable(self):
+        if os.geteuid() == 0:
+            return # Root can read anything
+
         try:
             fp, fn = tempfile.mkstemp()
             os.chmod(fn, 0)
@@ -69,21 +85,60 @@ class TestSendFile(unittest.TestCase):
         f = static_file(basename, root=root, mimetype='text/foo', charset='latin1')
         self.assertEqual('text/foo; charset=latin1', f.headers['Content-Type'])
 
+    def test_mime_gzip(self):
+        """ SendFile: Mime Guessing"""
+        try:
+            fp, fn = tempfile.mkstemp(suffix=".txt.gz")
+            f = static_file(fn, root='/')
+            self.assertTrue(f.headers['Content-Type'][0] in ('application/gzip'))
+            self.assertFalse('Content-Encoding' in f.headers)
+        finally:
+            os.close(fp)
+            os.unlink(fn)
+
     def test_ims(self):
         """ SendFile: If-Modified-Since"""
-        request.environ['HTTP_IF_MODIFIED_SINCE'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+        request.environ['HTTP_IF_MODIFIED_SINCE'] = bottle.http_date(time.time())
         res = static_file(basename, root=root)
         self.assertEqual(304, res.status_code)
         self.assertEqual(int(os.stat(__file__).st_mtime), parse_date(res.headers['Last-Modified']))
         self.assertAlmostEqual(int(time.time()), parse_date(res.headers['Date']))
-        request.environ['HTTP_IF_MODIFIED_SINCE'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(100))
+        request.environ['HTTP_IF_MODIFIED_SINCE'] = bottle.http_date(100)
         self.assertEqual(open(__file__,'rb').read(), static_file(basename, root=root).body.read())
+
+    def test_ims_empty(self):
+        """ SendFile: Empty If-Modified-Since"""
+        request.environ['HTTP_IF_MODIFIED_SINCE'] = ''
+        self.assertEqual(open(__file__, 'rb').read(), static_file(basename, root=root).body.read())
+
+    def test_etag(self):
+        """ SendFile: If-Modified-Since"""
+        res = static_file(basename, root=root)
+        self.assertTrue('ETag' in res.headers)
+        self.assertEqual(200, res.status_code)
+        etag = res.headers['ETag']
+        
+        request.environ['HTTP_IF_NONE_MATCH'] = etag
+        res = static_file(basename, root=root)
+        self.assertTrue('ETag' in res.headers)
+        self.assertEqual(etag, res.headers['ETag'])
+        self.assertEqual(304, res.status_code)
+
+        request.environ['HTTP_IF_NONE_MATCH'] = etag
+        res = static_file(basename2, root=root2)
+        self.assertTrue('ETag' in res.headers)
+        self.assertNotEqual(etag, res.headers['ETag'])
+        self.assertEqual(200, res.status_code)
 
     def test_download(self):
         """ SendFile: Download as attachment """
+        f = static_file(basename, root=root, download="foo.mp3")
+        self.assertEqual('audio/mpeg', f.headers['Content-Type'])
+
         f = static_file(basename, root=root, download=True)
         self.assertEqual('attachment; filename="%s"' % basename, f.headers['Content-Disposition'])
-        request.environ['HTTP_IF_MODIFIED_SINCE'] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime(100))
+        request.environ['HTTP_IF_MODIFIED_SINCE'] = bottle.http_date(100)
+
         f = static_file(basename, root=root)
         self.assertEqual(open(__file__,'rb').read(), f.body.read())
 
@@ -103,7 +158,12 @@ class TestSendFile(unittest.TestCase):
         self.assertEqual([(5, 11)],  r('bytes=5-10'))
         self.assertEqual([(10, 100), (90, 100), (5, 11)],  r('bytes=10-,-10,5-10'))
 
-
-if __name__ == '__main__': #pragma: no cover
-    unittest.main()
-
+    def test_custom_headers(self):
+        """ SendFile: Custom headers """
+        headers = {'X-Custom-Header': 'test-value'}
+        headers_orig = headers.copy()
+        res = static_file(basename, root=root, headers=headers)
+        self.assertTrue('X-Custom-Header' in res.headers)
+        self.assertEqual('test-value', res.headers['X-Custom-Header'])
+        # Check the passed in headers dict isn't modified.
+        self.assertEqual(headers_orig, headers)

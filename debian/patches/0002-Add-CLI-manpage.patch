@@ -59,9 +59,9 @@ Subject: Add CLI manpage
 +
 --- a/docs/conf.py
 +++ b/docs/conf.py
-@@ -20,3 +20,9 @@
+@@ -27,3 +27,9 @@
+ gettext_compact = False
  
- autodoc_member_order = 'bysource'
  
 +man_pages = [
 +    ('cli', 'bottle', u'command line interface', [

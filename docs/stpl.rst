@@ -1,6 +1,6 @@
-======================
-SimpleTemplate Engine
-======================
+==============
+SimpleTemplate
+==============
 
 .. currentmodule:: bottle
 
@@ -20,6 +20,13 @@ In this document we use the :func:`template` helper in examples for the sake of 
    >>> from bottle import template
    >>> template('Hello {{name}}!', name='World')
    u'Hello World!'
+
+You can also pass a dictionary into the template using keyword arguments::
+
+   >>> from bottle import template
+   >>> my_dict={'number': '123', 'street': 'Fake St.', 'city': 'Fakeville'}
+   >>> template('I live at {{number}} {{street}}, {{city}}', **my_dict)
+   u'I live at 123 Fake St., Fakeville'
 
 Just keep in mind that compiling and rendering templates are two different actions, even if the :func:`template` helper hides this fact. Templates are usually compiled only once and cached internally, but rendered many times with different keyword arguments.
 
@@ -56,7 +63,9 @@ Embedded python code
 
 .. highlight:: html+django
 
-The template engine allows you to embed lines or blocks of python code within your template. Code lines start with ``%`` and code blocks are surrounded by ``<%`` and ``%>`` tokens::
+The template engine allows you to embed lines or blocks of python code within your template. Code lines start with ``%`` and code blocks are surrounded by ``<%`` and ``%>`` tokens:
+
+ .. code-block:: text
 
   % name = "Bob"  # a line of python code
   <p>Some plain text in between</p>
@@ -71,7 +80,7 @@ Embedded python code follows regular python syntax, but with two additional synt
 * **Indentation is ignored.** You can put as much whitespace in front of statements as you want. This allows you to align your code with the surrounding markup and can greatly improve readability.
 * Blocks that are normally indented now have to be closed explicitly with an ``end`` keyword.
 
-::
+ .. code-block:: text
 
   <ul>
     % for item in basket:
@@ -79,14 +88,15 @@ Embedded python code follows regular python syntax, but with two additional synt
     % end
   </ul>
 
-Both the ``%`` and the ``<%`` tokens are only recognized if they are the first non-whitespace characters in a line. You don't have to escape them if they appear mid-text in your template markup. Only if a line of text starts with one of these tokens, you have to escape it with a backslash. In the rare case where the backslash + token combination appears in your markup at the beginning of a line, you can always help yourself with a string literal in an inline expression:: 
+Both the ``%`` and the ``<%`` tokens are only recognized if they are the first non-whitespace characters in a line. You don't have to escape them if they appear mid-text in your template markup. Only if a line of text starts with one of these tokens, you have to escape it with a backslash. In the rare case where the backslash + token combination appears in your markup at the beginning of a line, you can always help yourself with a string literal in an inline expression:
+
+ .. code-block:: text
 
   This line contains % and <% but no python code.
   \% This text-line starts with the '%' token.
   \<% Another line that starts with a token but is rendered as text.
   {{'\\%'}} this line starts with an escaped token.
 
-If you find yourself to escape a lot, consider using :ref:`custom tokens <stpl-custom-tokens>`.
 
 Whitespace Control
 -----------------------
@@ -113,7 +123,7 @@ But embedding code still requires you to start a new line, which may not what yo
    %end
   </div>
 
-THis time the rendered template looks like this::
+This time the rendered template looks like this::
 
   <div><span>content</span></div>
 
@@ -127,7 +137,7 @@ Each template is preloaded with a bunch of functions that help with the most com
 .. currentmodule:: stpl
 
 .. versionchanged:: 0.12
-   Prior to this release, :func:`include` and :func:`rebase` were sytnax keywords, not functions.
+   Prior to this release, :func:`include` and :func:`rebase` were syntax keywords, not functions.
 
 .. function:: include(sub_template, **variables)
 
@@ -135,7 +145,7 @@ Each template is preloaded with a bunch of functions that help with the most com
 
     % include('header.tpl', title='Page Title')
     Page Content
-    % include('foother.tpl')
+    % include('footer.tpl')
 
 .. function:: rebase(name, **variables)
 
@@ -144,14 +154,16 @@ Each template is preloaded with a bunch of functions that help with the most com
     % rebase('base.tpl', title='Page Title')
     <p>Page Content ...</p>
 
-  This can be combined with the following ``base.tpl``::
+  This can be combined with the following ``base.tpl``:
+
+  .. code-block:: html
 
     <html>
     <head>
       <title>{{title or 'No title'}}</title>
     </head>
     <body>
-      {{base}}
+      {{!base}}
     </body>
     </html>
 
@@ -194,4 +206,3 @@ variables in different ways::
 
 .. autoclass:: SimpleTemplate
    :members:
-

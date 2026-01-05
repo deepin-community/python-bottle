@@ -1,9 +1,84 @@
 ﻿.. highlight:: python
 .. currentmodule:: bottle
 
-===========================
-Release Notes and Changelog
-===========================
+=============
+Release Notes
+=============
+
+Release 0.13
+==============
+
+.. warning:: This release contains breaking changers, please read the notes below
+
+.. rubric:: Dropped support for Python versions that reached their end-of-life.
+
+Bottle up to 0.12 supported an absurd range of Python versions (2.5 to 3.12) and
+keeping support for Python versions as ancient as 2.5 required a ton of workarounds
+and compromises, but served no real purpose. If you need support for older Python
+versions, you can stay on bottle 0.12. The updated list of tested and supported python
+releases is as follows:
+
+ * Python 2 >= 2.7.3
+ * Python 3 >= 3.8
+
+Support for Python 2.5 was marked as deprecated since 0.12. We decided to go a step further
+and also remove support for 2.6 and 3.1 to 3.7 even if it was never deprecated explicitly
+in bottle. This means that this release is *not* backwards compatible in Python <2.7.3 or
+<3.8 environments. Maintainers for distributions or systems that still use these old python
+versions should not update to Bottle 0.13 and stick with 0.12 instead.
+
+.. rubric:: Stabilized APIs
+
+* The documented API of the :class:`ConfigDict` class is now considered stable and ready to use.
+
+.. rubric:: Deprecated APIs
+
+* Python 2 support is now deprecated and will be dropped with the next release.
+* The command line executable installed along with bottle will be renamed from `bottle.py` to just `bottle`. You can still execute bottle directly as a script (e.g. `./bottle.py` or `python3 bottle.py`) or as a module (via `python3 -m bottle`). Just the executable installed by your packaging tool (e.g. `pip`) into the `bin` folder of your (virtual) environment will change.
+* The old route syntax (``/hello/:name``) is deprecated in favor of the more readable and flexible ``/hello/<name>`` syntax.
+* :meth:`Bottle.mount` now recognizes Bottle instance and will warn about parameters that are not compatible with the new mounting behavior. The old behavior (mount applications as WSGI callable) still works and is used as a fallback automatically.
+* The undocumented :func:`local_property` helper is now deprecated.
+* The server adapter for google app engine is not useful anymore and marked as deprecated.
+* Bottle uses pickle to store arbitrary objects into signed cookies. This is safe, as long as the signature key remains a secret. Unfortunately, people tend to push code with signature keys to github all the time, so we decided to remove pickle-support from bottle. Signed cookies will now issue a deprecation warning if the value is not a string, and support for non-string values will be removed in 0.14. The global :func:`cookie_encode`, :func:`cookie_decode` and :func:`is_cookie_encoded` are now also deprecated. If you are using this feature, think about using json to serialize your objects before storing them into cookies, or switch to a session system that stores data server-side instead of client-side.
+
+.. rubric:: Removed APIs (deprecated since 0.12)
+
+* Plugins with the old API (``api=1`` or no api attribute) will no longer work.
+* Parameter order of :meth:`Bottle.mount` changed in 0.10. The old order will now result in an error instead of a warning.
+* The :class:`ConfigDict` class was introduced in 0.11 and changed during 0.12. These changes are now final.
+
+  * Attribute access and assignment was removed due to high overhead and limited usability.
+  * Namespaced sub-instance creation was removed. ``config["a"]["b"]`` has a high overhead and little benefit over ``config["a.b"]``.
+  * :class:`ConfigDict` instances are no longer callable. This was a shortcut for :meth:`ConfigDict.update`.
+  * :class:`ConfigDict` constructor no longer accepts any parameters. Use the `load_*` methods instead.
+
+* Bottle 0.12 changed some aspects of the Simple Template Engine. These changes are now final and the old syntax will now longer work.
+
+  * The magic ``{{rebase()}}`` call was replaced by a ``base`` variable. Example: ``{{base}}``
+  * In STPL Templates, the ``rebase`` and ``include`` keywords were replaced with functions in 0.12.
+  * PEP-263 encoding strings are no longer recognized. Templates are always utf-8.
+
+* The 'geventSocketIO' server adapter was removed without notice. It did not work anyway.
+
+.. rubric:: Changes
+
+These changes might require special care when updating.
+
+* Signed cookies now use a stronger HMAC algorithm by default. This will result in old cookies to appear invalid after the update. Pass an explicit ``digestmod=hashlib.md5`` to :meth:`BaseRequest.get_cookie` and :meth:`BaseResponse.set_cookie` to get the old behavior.
+* Bottle now ships with its own multipart form data parser (borrowed from `multipart <https://pypi.org/project/multipart/>`_) and no longer relies on ``cgi.FieldStorage``, which was removed in Python 3.13. This may change the way broken (non-standard) form submissions are parsed. The new parser is more strict and correct than ohe old one.
+* Installing bottle with `pip` or similar tools will now install an additional command line executable named `bottle` into the `bin` folder of your (virtual) environment. This will replace the now deprecated `bottle.py` executable in a later release. See above.
+
+.. rubric:: Other Improvements
+
+* :class:`Bottle` instances are now context managers. If used in a with-statement, the default application changes to the specific instance and the shortcuts for many instance methods can be used.
+* Added support for ``PATCH`` requests and the :meth:`Bottle.patch` decorator.
+* Added `aiohttp <http://aiohttp.readthedocs.io/en/stable/>`_ and `uvloop <https://github.com/MagicStack/uvloop>`_ server adapters.
+* Added command-line arguments for config from json or ini files.
+* :meth:`Bottle.mount` now recognizes instances of :class:`Bottle` and mounts them with significantly less overhead than other WSGI applications.
+* The :attr:`BaseRequest.json` property now accepts ``application/json-rpc`` requests.
+* :func:`static_file` gained support for ``ETag`` headers. It will generate ETags and recognizes ``If-None-Match`` headers.
+* :func:`static_file` will now guess the mime type of ``*.gz`` and other compressed files correctly (e.g. ``application/gzip``) and NOT set the ``Content-Encoding`` header.
+* Jinja2 templates will produce better error messages than before.
 
 
 
@@ -11,9 +86,11 @@ Release 0.12
 ==============
 
 * New SimpleTemplate parser implementation
+
   * Support for multi-line code blocks (`<% ... %>`).
   * The keywords `include` and `rebase` are functions now and can accept variable template names.
-* The new :meth:`BaseRequest.route` property returns the :class:`Route` that originally matched the request.
+
+* The new :attr:`BaseRequest.route` property returns the :class:`Route` that originally matched the request.
 * Removed the ``BaseRequest.MAX_PARAMS`` limit. The hash collision bug in CPythons dict() implementation was fixed over a year ago. If you are still using Python 2.5 in production, consider upgrading or at least make sure that you get security fixed from your distributor.
 * New :class:`ConfigDict` API (see :doc:`configuration`)
 
@@ -34,7 +111,7 @@ Release 0.11
 
 .. rubric:: API Changes
 
-* :attr:`Response.status` is a read-write property that can be assigned either a numeric status code or a status string with a reason phrase (``200 OK``). The return value is now a string to better match existing APIs (WebOb, werkzeug). To be absolutely clear, you can use the read-only properties :attr:`BaseResponse.status_code` and :attr:`BaseResponse.status_line`.
+* :attr:`BaseResponse.status` is a read-write property that can be assigned either a numeric status code or a status string with a reason phrase (``200 OK``). The return value is now a string to better match existing APIs (WebOb, werkzeug). To be absolutely clear, you can use the read-only properties :attr:`BaseResponse.status_code` and :attr:`BaseResponse.status_line`.
 
 .. rubric:: API Deprecations
 
@@ -71,7 +148,7 @@ Release 0.10
   * Introduced a :class:`ConfigDict` that makes accessing configuration a lot easier (attribute access and auto-expanding namespaces).
   * Added support for raw WSGI applications to :meth:`Bottle.mount`.
   * :meth:`Bottle.mount` parameter order changed.
-  * :meth:`Bottle.route` now accpets an import string for the ``callback`` parameter.
+  * :meth:`Bottle.route` now accepts an import string for the ``callback`` parameter.
   * Dropped Gunicorn 0.8 support. Current supported version is 0.13.
   * Added custom options to Gunicorn server.
   * Finally dropped support for type filters. Replace with a custom plugin of needed.
@@ -82,13 +159,13 @@ Release 0.9
 
 .. rubric:: Whats new?
 
-* A brand new plugin-API. See :ref:`plugins` and :doc:`plugindev` for details.
+* A brand new plugin-API. See :doc:`plugins/index` and :doc:`plugins/dev` for details.
 * The :func:`route` decorator got a lot of new features. See :meth:`Bottle.route` for details.
 * New server adapters for `gevent <http://www.gevent.org/>`_, `meinheld <http://meinheld.org/>`_ and `bjoern <https://github.com/jonashaag/bjoern>`_.
 * Support for SimpleTAL templates.
 * Better runtime exception handling for mako templates in debug mode.
 * Lots of documentation, fixes and small improvements.
-* A new :data:`Request.urlparts` property.
+* A new :data:`BaseRequest.urlparts` property.
 
 .. rubric:: Performance improvements
 
@@ -124,8 +201,8 @@ These changes may break compatibility with previous versions.
 * ``bottle.optimize()`` and the automatic route optimization is obsolete.
 * Some functions and attributes were renamed:
 
-  * :attr:`Request._environ` is now :attr:`Request.environ`
-  * :attr:`Response.header` is now :attr:`Response.headers`
+  * :attr:`BaseRequest._environ` is now :attr:`BaseRequest.environ`
+  * :attr:`BaseResponse.header` is now :attr:`BaseResponse.headers`
   * :func:`default_app` is obsolete. Use :func:`app` instead.
 
 * The default :func:`redirect` code changed from 307 to 303.
@@ -136,8 +213,8 @@ These changes may break compatibility with previous versions.
 
 This is an incomplete list of new features and improved functionality.
 
-* The :class:`Request` object got new properties: :attr:`Request.body`, :attr:`Request.auth`, :attr:`Request.url`, :attr:`Request.header`, :attr:`Request.forms`, :attr:`Request.files`.
-* The :meth:`Response.set_cookie` and :meth:`Request.get_cookie` methods are now able to encode and decode python objects. This is called a *secure cookie* because the encoded values are signed and protected from changes on client side. All pickle-able data structures are allowed.
+* The :class:`Request` object got new properties: :attr:`BaseRequest.body`, :attr:`BaseRequest.auth`, :attr:`BaseRequest.url`, :attr:`BaseRequest.header`, :attr:`BaseRequest.forms`, :attr:`BaseRequest.files`.
+* The :meth:`BaseResponse.set_cookie` and :meth:`BaseRequest.get_cookie` methods are now able to encode and decode python objects. This is called a *secure cookie* because the encoded values are signed and protected from changes on client side. All pickle-able data structures are allowed.
 * The new :class:`Router` class drastically improves performance for setups with lots of dynamic routes and supports named routes (named route + dict = URL string).
 * It is now possible (and recommended) to return :exc:`HTTPError` and :exc:`HTTPResponse` instances or other exception objects instead of raising them.
 * The new function :func:`static_file` equals :func:`send_file` but returns a :exc:`HTTPResponse` or :exc:`HTTPError` instead of raising it. :func:`send_file` is deprecated.
@@ -145,10 +222,3 @@ This is an incomplete list of new features and improved functionality.
 * The :class:`SimpleTemplate` engine got full unicode support.
 * Lots of non-critical bugfixes.
 
-
-
-============
-Contributors
-============
-
-.. include:: ../AUTHORS

@@ -1,5 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+from __future__ import with_statement
+from .tools import chdir
+import unittest
+import sys, os
 
 try:
     import coverage
@@ -9,3 +11,4 @@ except ImportError:
 
 import bottle
 bottle.debug(True)
+

@@ -8,11 +8,11 @@ Subject: Remove bottle.py from scripts
 
 --- a/setup.py
 +++ b/setup.py
-@@ -17,7 +17,6 @@
-       author_email='marc@gsites.de',
-       url='http://bottlepy.org/',
+@@ -20,7 +20,6 @@
+           'Source': 'https://github.com/bottlepy/bottle',
+       },
        py_modules=['bottle'],
 -      scripts=['bottle.py'],
-       license='MIT',
-       platforms = 'any',
-       classifiers=['Development Status :: 4 - Beta',
+       entry_points={
+         'console_scripts': [
+           'bottle = bottle:main',

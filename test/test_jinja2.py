@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 import unittest
 from bottle import Jinja2Template, jinja2_template, jinja2_view, touni
-from .tools import warn
-import os
+from .tools import warn, chdir
 
-views_dir = os.path.join(os.path.dirname(__file__), 'views')
+
 
 class TestJinja2Template(unittest.TestCase):
 
@@ -15,17 +14,19 @@ class TestJinja2Template(unittest.TestCase):
 
     def test_file(self):
         """ Templates: Jinja2 file"""
-        t = Jinja2Template(name=views_dir + os.sep + 'jinja2_simple.tpl').render(var='var')
-        self.assertEqual('start var end', ''.join(t))
+        with chdir(__file__):
+            t = Jinja2Template(name='./views/jinja2_simple.tpl', lookup=['.']).render(var='var')
+            self.assertEqual('start var end', ''.join(t))
 
     def test_name(self):
         """ Templates: Jinja2 lookup by name """
-        t = Jinja2Template(name='jinja2_simple', lookup=[views_dir]).render(var='var')
-        self.assertEqual('start var end', ''.join(t))
+        with chdir(__file__):
+            t = Jinja2Template(name='jinja2_simple', lookup=['./views/']).render(var='var')
+            self.assertEqual('start var end', ''.join(t))
 
     def test_notfound(self):
         """ Templates: Unavailable templates"""
-        self.assertRaises(Exception, Jinja2Template, name="abcdef")
+        self.assertRaises(Exception, Jinja2Template, name="abcdef", lookup=['./views/'])
 
     def test_error(self):
         """ Templates: Exceptions"""
@@ -33,8 +34,9 @@ class TestJinja2Template(unittest.TestCase):
 
     def test_inherit(self):
         """ Templates: Jinja2 lookup and inherience """
-        t = Jinja2Template(name='jinja2_inherit', lookup=[views_dir]).render()
-        self.assertEqual('begin abc end', ''.join(t))
+        with chdir(__file__):
+            t = Jinja2Template(name='jinja2_inherit', lookup=['./views/']).render()
+            self.assertEqual('begin abc end', ''.join(t))
 
     def test_custom_filters(self):
         """Templates: jinja2 custom filters """
@@ -68,7 +70,4 @@ try:
 except ImportError:
   warn("No Jinja2 template support. Skipping tests.")
   del TestJinja2Template
-
-if __name__ == '__main__': #pragma: no cover
-    unittest.main()
 

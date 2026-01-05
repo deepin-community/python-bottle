@@ -1,5 +1,5 @@
-Primer to Asynchronous Applications
-===================================
+Asynchronous Applications
+=========================
 
 Asynchronous design patterns don't mix well with the synchronous nature of `WSGI <http://www.python.org/dev/peps/pep-3333/>`_. This is why most asynchronous frameworks (tornado, twisted, ...) implement a specialized API to expose their asynchronous features. Bottle is a WSGI framework and shares the synchronous nature of WSGI, but thanks to the awesome `gevent project <http://www.gevent.org/>`_, it is still possible to write asynchronous applications with bottle. This article documents the usage of Bottle with Asynchronous WSGI.
 
@@ -102,7 +102,8 @@ Thankfully the `gevent-websocket <http://pypi.python.org/pypi/gevent-websocket/>
                 break
 
     from gevent.pywsgi import WSGIServer
-    from geventwebsocket import WebSocketHandler, WebSocketError
+    from geventwebsocket import WebSocketError
+    from geventwebsocket.handler import WebSocketHandler
     server = WSGIServer(("0.0.0.0", 8080), app,
                         handler_class=WebSocketHandler)
     server.serve_forever()
